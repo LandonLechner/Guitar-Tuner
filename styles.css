@@ -23,7 +23,7 @@ body {
 .app {
   width: 100%;
   max-width: 720px;
-  margin: 0 auto;
+  margin: 20px auto;
   padding: 18px;
 }
 
@@ -38,11 +38,13 @@ body {
 }
 
 h1 {
-  margin: 0 0 18px;
+  margin: 0 0 30px;
   font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.03em;
   text-align: center;
+  font-style: italic;
+  letter-spacing: 0.3rem;
 }
 
 .top-controls {
@@ -64,9 +66,12 @@ h1 {
 
 label {
   display: block;
-  margin-bottom: 8px;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.control-group label:nth-of-type(1) {
+    margin-bottom: 8px;
 }
 
 select {
@@ -74,8 +79,8 @@ select {
   background: var(--panel);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 8px;
+  padding: 5px 14px;
   font-size: 1rem;
   outline: none;
 }
@@ -86,14 +91,14 @@ select:focus {
 
 input[type="range"] {
   width: 100%;
-  margin-top: 14px;
+  margin-top: 8px;
 }
 
 .string-row {
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px;
+  border-radius: 8px;
+  padding: 8px 12px;
   margin-bottom: 12px;
   transition:
     border-color 0.15s ease,

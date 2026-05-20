@@ -287,7 +287,7 @@ function renderStrings() {
         <div class="row-controls">
 
           <button class="reset-btn">
-            Reset
+            R
           </button>
 
           <label class="toggle">

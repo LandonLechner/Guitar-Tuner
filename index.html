@@ -1,0 +1,40 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Guitar Tuner</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div class="app">
+
+    <header class="header">
+      <h1>Guitar Tuner</h1>
+
+      <div class="top-controls">
+
+        <div class="control-group">
+          <label for="string-count">Strings</label>
+          <select id="string-count">
+            <option value="6">6 String</option>
+            <option value="7">7 String</option>
+            <option value="8">8 String</option>
+          </select>
+        </div>
+
+        <div class="control-group volume-group">
+          <label for="volume">Volume</label>
+          <input type="range" id="volume" min="0" max="1" step="0.01" value="0.3">
+        </div>
+
+      </div>
+    </header>
+
+    <main id="strings-container"></main>
+
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,32 +1,33 @@
 const stringsContainer = document.getElementById("strings-container");
 const stringCountSelect = document.getElementById("string-count");
 const volumeSlider = document.getElementById("volume");
+const resetAllBtn = document.getElementById("reset-all-btn");
 
 const STORAGE_KEY = "guitarTunerSettings";
 
 const STANDARD_TUNINGS = {
   6: ["E2", "A2", "D3", "G3", "B3", "E4"],
   7: ["B1", "E2", "A2", "D3", "G3", "B3", "E4"],
-  8: ["F#1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"]
+  8: ["F♯1", "B1", "E2", "A2", "D3", "G3", "B3", "E4"]
 };
 
 const NOTES = [
-  "C","C#","D","D#","E","F",
-  "F#","G","G#","A","A#","B"
+  "C","C♯","D","D♯","E","F",
+  "F♯","G","G♯","A","A♯","B"
 ];
 
 const NOTE_LABELS = {
   "C": "C",
-  "C#": "C#/Db",
+  "C♯": "C♯/D♭",
   "D": "D",
-  "D#": "D#/Eb",
+  "D♯": "D♯/E♭",
   "E": "E",
   "F": "F",
-  "F#": "F#/Gb",
+  "F♯": "F♯/G♭",
   "G": "G",
-  "G#": "G#/Ab",
+  "G♯": "G♯/A♭",
   "A": "A",
-  "A#": "A#/Bb",
+  "A♯": "A♯/B♭",
   "B": "B"
 };
 
@@ -42,7 +43,7 @@ function initializeAudio() {
 }
 
 function noteToMidi(note) {
-  const match = note.match(/^([A-G]#?)(\d)$/);
+  const match = note.match(/^([A-G]♯?)(\d)$/);
 
   if (!match) return 60;
 
@@ -72,7 +73,7 @@ function createNoteOptions(baseNote) {
     const midi = baseMidi + i;
     const note = midiToNote(midi);
 
-    const match = note.match(/^([A-G]#?)(\d)$/);
+    const match = note.match(/^([A-G]♯?)(\d)$/);
     const pitch = match[1];
     const octave = match[2];
 
@@ -137,7 +138,10 @@ function stopTone() {
 
 function playTone(note, toggleElement, rowElement) {
 
-    initializeAudio();
+  initializeAudio();
+
+  const HARMONIC_BOOST = 1.0;
+  const LOW_NOTE_THRESHOLD = 120;
 
   const frequency = noteToFrequency(note);
 
@@ -151,6 +155,22 @@ function playTone(note, toggleElement, rowElement) {
   gainNode.connect(audioContext.destination);
 
   /*
+    Increase harmonic content for low notes
+  */
+  let boost = 1;
+
+  if (frequency < LOW_NOTE_THRESHOLD) {
+
+    boost =
+      1 +
+      (
+        (LOW_NOTE_THRESHOLD - frequency)
+        / LOW_NOTE_THRESHOLD
+      ) * HARMONIC_BOOST;
+
+  }
+
+  /*
     Fundamental
   */
   const osc1 = audioContext.createOscillator();
@@ -158,7 +178,6 @@ function playTone(note, toggleElement, rowElement) {
 
   osc1.type = "sine";
   osc1.frequency.value = frequency;
-
   gain1.gain.value = 1.0;
 
   osc1.connect(gain1);
@@ -172,8 +191,7 @@ function playTone(note, toggleElement, rowElement) {
 
   osc2.type = "sine";
   osc2.frequency.value = frequency * 2;
-
-  gain2.gain.value = 0.22;
+  gain2.gain.value = 0.35 * boost;
 
   osc2.connect(gain2);
   gain2.connect(gainNode);
@@ -186,13 +204,30 @@ function playTone(note, toggleElement, rowElement) {
 
   osc3.type = "sine";
   osc3.frequency.value = frequency * 3;
-
-  gain3.gain.value = 0.12;
+  gain3.gain.value = 0.2 * boost;
 
   osc3.connect(gain3);
   gain3.connect(gainNode);
 
-  oscillators = [osc1, osc2, osc3];
+  /*
+    4th harmonic
+  */
+  const osc4 = audioContext.createOscillator();
+  const gain4 = audioContext.createGain();
+
+  osc4.type = "sine";
+  osc4.frequency.value = frequency * 4;
+  gain4.gain.value = 0.1 * boost;
+
+  osc4.connect(gain4);
+  gain4.connect(gainNode);
+
+  oscillators = [
+    osc1,
+    osc2,
+    osc3,
+    osc4
+  ];
 
   oscillators.forEach(osc => osc.start());
 
@@ -265,10 +300,6 @@ function renderStrings() {
     row.innerHTML = `
       <div class="row-top">
 
-        <div class="string-label">
-          String ${count - i}
-        </div>
-
         <select class="note-select">
           ${options.map(option => `
             <option
@@ -286,10 +317,6 @@ function renderStrings() {
 
         <div class="row-controls">
 
-          <button class="reset-btn">
-            R
-          </button>
-
           <label class="toggle">
             <input type="checkbox" class="tone-toggle">
             <span class="slider"></span>
@@ -303,7 +330,6 @@ function renderStrings() {
     const select = row.querySelector(".note-select");
     const frequencyLabel = row.querySelector(".frequency");
     const toggle = row.querySelector(".tone-toggle");
-    const resetBtn = row.querySelector(".reset-btn");
 
     select.addEventListener("change", () => {
 
@@ -387,29 +413,64 @@ function renderStrings() {
 
     });
 
-    resetBtn.addEventListener("click", () => {
-
-      select.value = defaults[i];
-
-      const freq = noteToFrequency(defaults[i]).toFixed(2);
-      frequencyLabel.textContent = `${freq} Hz`;
-
-      if (toggle.checked) {
-        playTone(defaults[i], toggle, row);
-      }
-
-      saveSettings();
-    });
-
     stringsContainer.appendChild(row);
   }
 
   saveSettings();
 }
 
-stringCountSelect.addEventListener("change", () => {
-  renderStrings();
-});
+function resetAllStrings() {
+
+  const count =
+    parseInt(stringCountSelect.value);
+
+  const defaults =
+    STANDARD_TUNINGS[count];
+
+  document
+    .querySelectorAll(".string-row")
+    .forEach((row, index) => {
+
+      const select =
+        row.querySelector(".note-select");
+
+      const frequency =
+        row.querySelector(".frequency");
+
+      select.value = defaults[index];
+
+      frequency.textContent =
+        `${noteToFrequency(defaults[index]).toFixed(2)} Hz`;
+
+    });
+
+  stopTone();
+
+  saveSettings();
+}
+
+stringCountSelect.addEventListener(
+  "change",
+  () => {
+
+    const count =
+      parseInt(stringCountSelect.value);
+
+    const settings =
+      loadSettings();
+
+    settings.stringCount = count;
+    settings.notes =
+      [...STANDARD_TUNINGS[count]];
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(settings)
+    );
+
+    renderStrings();
+  }
+);
 
 volumeSlider.addEventListener("input", () => {
 
@@ -422,6 +483,11 @@ volumeSlider.addEventListener("input", () => {
 
   saveSettings();
 });
+
+resetAllBtn.addEventListener(
+  "click",
+  resetAllStrings
+);
 
 function initialize() {
 
